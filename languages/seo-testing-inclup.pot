@@ -1,0 +1,62 @@
+# Este archivo es un archivo de plantilla para la traducción del plugin.
+# Permite que el texto del plugin sea traducido a diferentes idiomas.
+
+msgid "Plugin Name"
+msgstr "SEO TESTING INCLUP"
+
+msgid "Description"
+msgstr "Un plugin para analizar un sitio web utilizando la API de Google PageSpeed Insights."
+
+msgid "Version"
+msgstr "1.0.0"
+
+msgid "Author"
+msgstr "Tu Nombre"
+
+msgid "Author URI"
+msgstr "Tu URL"
+
+msgid "Settings"
+msgstr "Configuraciones"
+
+msgid "Email for receiving leads"
+msgstr "Correo para recibir leads"
+
+msgid "API Token"
+msgstr "Token de la API"
+
+msgid "Button Text"
+msgstr "Texto del botón"
+
+msgid "Privacy Policy URL"
+msgstr "URL de la política de privacidad"
+
+msgid "Terms of Service URL"
+msgstr "URL de los términos de servicio"
+
+msgid "Clean Database"
+msgstr "Limpiar base de datos"
+
+msgid "View Full Information"
+msgstr "Ver toda la información"
+
+msgid "Lead Management"
+msgstr "Gestión de Leads"
+
+msgid "Download Leads as CSV"
+msgstr "Descargar Leads en formato CSV"
+
+msgid "Submit"
+msgstr "Enviar"
+
+msgid "Domain Verification"
+msgstr "Verificación de Dominio"
+
+msgid "Results"
+msgstr "Resultados"
+
+msgid "Contact Form"
+msgstr "Formulario de Contacto"
+
+msgid "reCAPTCHA Integration"
+msgstr "Integración de reCAPTCHA"
