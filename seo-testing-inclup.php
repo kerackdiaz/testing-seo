@@ -3,8 +3,8 @@
  * Plugin Name: SEO TESTING INCLUP
  * Description: Un plugin para analizar un sitio web utilizando la API de Google PageSpeed Insights.
  * Version: 1.0.0
- * Author: Tu Nombre
- * Author URI: Tu URL
+ * Author: Kerack Diaz
+ * Author URI: https://github.com/kerackdiaz/
  * License: GPL2
  */
 
@@ -57,18 +57,35 @@ function seo_testing_inclup_deactivate() {
 }
 register_deactivation_hook( __FILE__, 'seo_testing_inclup_deactivate' );
 
-// Cargar scripts y estilos
+// Cargar scripts y estilos para el frontend
 function seo_testing_inclup_enqueue_scripts() {
-    wp_enqueue_style( 'seo-testing-inclup-style', SEO_TESTING_INCLUP_URL . 'src/assets/css/style.css' );
-    wp_enqueue_script( 'seo-testing-inclup-script', SEO_TESTING_INCLUP_URL . 'src/assets/js/script.js', array( 'jquery' ), null, true );
+    wp_enqueue_style( 'seo-testing-inclup-style', SEO_TESTING_INCLUP_URL . 'src/assets/css/style.css', array(), '1.0.0' );
+    wp_enqueue_script( 'seo-testing-inclup-validation', SEO_TESTING_INCLUP_URL . 'src/assets/js/validation.js', array(), null, true );
+    wp_enqueue_script( 'seo-testing-inclup-utils', SEO_TESTING_INCLUP_URL . 'src/assets/js/utils.js', array(), null, true );
+    wp_enqueue_script( 'seo-testing-inclup-display-results', SEO_TESTING_INCLUP_URL . 'src/assets/js/display-results.js', array(), null, true );
+    wp_enqueue_script( 'seo-testing-inclup-popup-handler', SEO_TESTING_INCLUP_URL . 'src/assets/js/popup-handler.js', array(), null, true );
+    wp_enqueue_script( 'seo-testing-inclup-form-handler', SEO_TESTING_INCLUP_URL . 'src/assets/js/form-handler.js', array('seo-testing-inclup-validation', 'seo-testing-inclup-utils', 'seo-testing-inclup-display-results', 'seo-testing-inclup-popup-handler'), null, true );
 
-    wp_localize_script( 'seo-testing-inclup-script', 'seoTestingInclup', array(
+    wp_localize_script( 'seo-testing-inclup-form-handler', 'seoTestingInclup', array(
         'ajaxUrl' => admin_url( 'admin-ajax.php' ),
         'termsUrl' => get_option( 'seo_testing_inclup_terms_url' ),
         'privacyUrl' => get_option( 'seo_testing_inclup_privacy_url' ),
     ));
 }
 add_action( 'wp_enqueue_scripts', 'seo_testing_inclup_enqueue_scripts' );
+
+// Encolar estilos específicos para la página de leads
+function seo_testing_inclup_enqueue_leads_page_styles( $hook ) {
+    // Agregar una línea de depuración para verificar el hook
+    error_log("Hook actual en admin_enqueue_scripts: " . $hook);
+
+    // Verificar si el hook corresponde a la página de leads según el log
+    if ( $hook !== 'seo-testing_page_seo-testing-inclup-leads' ) { 
+        return;
+    }
+    wp_enqueue_style( 'seo-testing-inclup-leads-page', SEO_TESTING_INCLUP_URL . 'src/assets/css/leads-page.css', array(), '1.0.0' );
+}
+add_action( 'admin_enqueue_scripts', 'seo_testing_inclup_enqueue_leads_page_styles' );
 
 // Agregar menú en el panel de administración
 function seo_testing_inclup_add_admin_menu() {
@@ -85,8 +102,11 @@ function seo_testing_inclup_form_shortcode() {
         <form id="seo-testing-form">
             <label for="domain-input">Ingresa el dominio:</label>
             <input type="text" id="domain-input" name="domain" required>
-            <button type="submit" class="button">Enviar</button>
+            <button type="submit" class="button">Analizar</button>
         </form>
+        <div id="loading-animation" style="display:none;">
+            <div id="loading-text">Analizando...</div>
+        </div>
         <div id="results-container"></div>
         <div id="full-info-popup" style="display:none;"></div>
     </div>
@@ -119,3 +139,4 @@ function seo_testing_inclup_handle_ajax() {
 }
 add_action( 'wp_ajax_seo_testing_inclup_submit', 'seo_testing_inclup_handle_ajax' );
 add_action( 'wp_ajax_nopriv_seo_testing_inclup_submit', 'seo_testing_inclup_handle_ajax' );
+?>

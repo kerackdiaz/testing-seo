@@ -1,0 +1,103 @@
+.seo-testing-inclup-leads-page {
+    font-family: Arial, sans-serif;
+    background-color: #f7f7f7;
+    padding: 20px;
+    border-radius: 5px;
+}
+
+.seo-testing-inclup-leads-page h1 {
+    color: #333;
+    margin-bottom: 20px;
+}
+
+/* Estilos para el formulario de filtros */
+.filters-form {
+    display: flex;
+    align-items: flex-end;
+    gap: 15px;
+    background-color: #fff;
+    padding: 20px;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
+.filters-form .filter-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.filters-form .filter-item label {
+    margin-bottom: 5px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.filters-form .filter-item input[type="text"],
+.filters-form .filter-item input[type="date"],
+.filters-form .filter-item select {
+    padding: 6px 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    max-width: 150px; /* Ancho máximo reducido */
+}
+
+.filters-form .filter-item .button-secondary {
+    margin-top: 10px;
+    padding: 6px 12px;
+    font-size: 14px;
+}
+
+.filters-form p.submit {
+    text-align: left;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    flex-direction: row;
+    width: 60%;
+}
+
+/* Formulario para Descargar CSV */
+.download-csv-form {
+    margin-bottom: 20px;
+}
+
+.download-csv-form .button-primary {
+    padding: 6px 12px;
+    font-size: 14px;
+}
+
+/* Tabla de Leads */
+.seo-testing-inclup-leads-page table.widefat {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #fff;
+}
+
+.seo-testing-inclup-leads-page table.widefat th,
+.seo-testing-inclup-leads-page table.widefat td {
+    border: 1px solid #ddd;
+    padding: 12px;
+    text-align: left;
+}
+
+.seo-testing-inclup-leads-page table.widefat th {
+    background-color: #0073aa;
+    color: #fff;
+}
+
+.seo-testing-inclup-leads-page table.widefat tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.seo-testing-inclup-leads-page table.widefat tr:hover {
+    background-color: #f1f1f1;
+}
+
+.seo-testing-inclup-leads-page table.widefat tbody tr td {
+    vertical-align: middle;
+}

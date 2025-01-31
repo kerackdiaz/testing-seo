@@ -1,13 +1,13 @@
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('seo-testing-form');
     const resultsContainer = document.getElementById('results-container');
-    let resultsData = null; // Variable global para almacenar los resultados de la API
+    const loadingAnimation = document.getElementById('loading-animation');
+    let resultsData = null;
 
     if (form) {
         form.addEventListener('submit', function(event) {
             event.preventDefault();
             let domain = document.getElementById('domain-input').value.trim();
-
             domain = domain.replace(/\/$/, '');
 
             if (!isValidDomain(domain)) {
@@ -20,7 +20,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 segundos
+            const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+            // Mostrar el spinner
+            if (loadingAnimation) {
+                loadingAnimation.style.display = 'flex'; // Cambiado a 'flex' para que sea visible
+            }
 
             fetch(seoTestingInclup.ajaxUrl, {
                 method: 'POST',
@@ -36,13 +41,11 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 clearTimeout(timeoutId);
-                console.log('Respuesta de la API:', data);
                 if (data.success) {
                     if (data.data && data.data.results) {
-                        resultsData = data.data.results; // Almacenar los resultados en la variable global
+                        resultsData = data.data.results;
                         displayResults(resultsData);
                     } else {
-                        console.error('Estructura de datos inesperada:', data);
                         alert('Error al procesar los resultados. Inténtalo de nuevo más tarde.');
                     }
                 } else {
@@ -51,11 +54,15 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 if (error.name === 'AbortError') {
-                    console.error('Error: La solicitud fue cancelada debido a un tiempo de espera excedido.');
                     alert('La solicitud tardó demasiado tiempo. Por favor, intenta de nuevo.');
                 } else {
-                    console.error('Error:', error);
                     alert('Ocurrió un error. Por favor, intenta de nuevo.');
+                }
+            })
+            .finally(() => {
+                // Ocultar el spinner
+                if (loadingAnimation) {
+                    loadingAnimation.style.display = 'none';
                 }
             });
         });
@@ -67,23 +74,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function displayResults(results) {
-        console.log('Resultados completos:', results);
-
         if (!results.metrics) {
-            console.error('Métricas no encontradas en los resultados:', results);
             alert('Error al procesar los resultados. Inténtalo de nuevo más tarde.');
             return;
         }
 
         const metrics = results.metrics;
-        resultsContainer.innerHTML = ''; // Limpiar el contenedor
+        resultsContainer.innerHTML = '';
 
-        // Mostrar la URL analizada
         const title = document.createElement('h3');
         title.textContent = `Resultados para ${results.url}`;
         resultsContainer.appendChild(title);
 
-        // Mostrar los scores principales
         const scoresContainer = document.createElement('div');
         scoresContainer.className = 'scores-container';
 
@@ -111,7 +113,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         resultsContainer.appendChild(scoresContainer);
 
-        // Botón para ver más información (abre el popup con el formulario)
         const viewMoreButton = document.createElement('button');
         viewMoreButton.id = 'view-more-button';
         viewMoreButton.className = 'button';
@@ -124,76 +125,64 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function calculatePerformanceScore(metrics) {
-        // Calcular un score de rendimiento basado en métricas clave
         const fcp = parseFloat(metrics['first-contentful-paint'].displayValue) || 0;
         const lcp = parseFloat(metrics['largest-contentful-paint'].displayValue) || 0;
         const cls = parseFloat(metrics['cumulative-layout-shift'].displayValue) || 0;
         const tbt = parseFloat(metrics['total-blocking-time'].displayValue) || 0;
 
-        // Ponderar las métricas (esto es un ejemplo, puedes ajustar los pesos)
         const score = 100 - (fcp * 0.2 + lcp * 0.3 + cls * 20 + tbt * 0.1);
-        return Math.max(0, Math.min(100, Math.round(score))); // Asegurar que esté entre 0 y 100
+        return Math.max(0, Math.min(100, Math.round(score)));
     }
 
     function calculateAccessibilityScore(metrics) {
-        let score = 100; // Puntaje inicial
+        let score = 100;
 
-        // Penalizar si hay problemas de contraste de colores
         if (metrics['color-contrast'] && metrics['color-contrast'].displayValue) {
-            score -= 10; // Penalización por problemas de contraste
+            score -= 10;
         }
 
-        // Penalizar si hay imágenes sin atributos alt
         if (metrics['image-alt'] && metrics['image-alt'].displayValue) {
-            score -= 5; // Penalización por imágenes sin alt
+            score -= 5;
         }
 
-        // Penalizar si hay problemas de uso de ARIA
         if (metrics['aria-valid-attr-value'] && metrics['aria-valid-attr-value'].displayValue) {
-            score -= 5; // Penalización por problemas de ARIA
+            score -= 5;
         }
 
-        // Asegurar que el score esté entre 0 y 100
         return Math.max(0, Math.min(100, score));
     }
 
     function calculateSeoScore(metrics) {
-        let score = 100; // Puntaje inicial
+        let score = 100;
 
-        // Penalizar si hay problemas de metaetiquetas
         if (metrics['meta-description'] && metrics['meta-description'].displayValue) {
-            score -= 5; // Penalización por falta de meta descripción
+            score -= 5;
         }
 
-        // Penalizar si hay problemas de encabezados
         if (metrics['heading-order'] && metrics['heading-order'].displayValue) {
-            score -= 5; // Penalización por problemas en el orden de encabezados
+            score -= 5;
         }
 
-        // Penalizar si hay imágenes no optimizadas
         if (metrics['modern-image-formats'] && metrics['modern-image-formats'].displayValue) {
-            score -= 10; // Penalización por no usar formatos de imagen modernos
+            score -= 10;
         }
 
-        // Penalizar si hay problemas de velocidad
         if (metrics['speed-index'] && parseFloat(metrics['speed-index'].displayValue) > 3.0) {
-            score -= 15; // Penalización por velocidad lenta
+            score -= 15;
         }
 
-        // Asegurar que el score esté entre 0 y 100
         return Math.max(0, Math.min(100, score));
     }
 
     function getScoreColor(score) {
-        if (score >= 90) return '#4caf50'; // Verde
-        if (score >= 50) return '#ff9800'; // Naranja
-        return '#f44336'; // Rojo
+        if (score >= 90) return '#4caf50';
+        if (score >= 50) return '#ff9800';
+        return '#f44336';
     }
 
     function getMetricProgress(value) {
-        // Convierte el valor de la métrica en un porcentaje para la barra de progreso
         const numericValue = parseFloat(value);
-        return Math.min(100, numericValue * 10); // Ajusta según la métrica
+        return Math.min(100, numericValue * 10);
     }
 
     function openPopup() {
@@ -201,7 +190,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (popup) {
             popup.style.display = 'flex';
 
-            // Crear el contenido del popup (solo el formulario)
             const popupContent = `
                 <div class="popup-content">
                     <span class="close">&times;</span>
@@ -237,14 +225,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (leadForm) {
                 leadForm.addEventListener('submit', function(event) {
                     event.preventDefault();
-                    // Aquí puedes agregar la lógica para enviar el formulario y almacenar el lead
                     popup.style.display = 'none';
                     alert('Formulario enviado. Ahora puedes ver la información completa.');
-
-                    // Mostrar el contenido adicional (métricas y oportunidades de mejora)
                     displayAdditionalContent(resultsContainer, resultsData);
 
-                    // Ocultar el botón "Ver toda la info"
                     const viewMoreButton = document.getElementById('view-more-button');
                     if (viewMoreButton) {
                         viewMoreButton.style.display = 'none';
@@ -257,7 +241,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function displayAdditionalContent(container, results) {
         const metrics = results.metrics;
 
-        // Mostrar métricas clave
         const metricsContainer = document.createElement('div');
         metricsContainer.className = 'metrics-container';
 
@@ -287,7 +270,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         container.appendChild(metricsContainer);
 
-        // Mostrar oportunidades de mejora
         const opportunitiesContainer = document.createElement('div');
         opportunitiesContainer.className = 'opportunities-container';
 

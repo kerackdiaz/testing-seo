@@ -119,4 +119,90 @@ function seo_testing_inclup_mark_as_potential_client( $lead_id ) {
 
     return $wpdb->update( $table_name, array( 'potential_client' => 1 ), array( 'id' => $lead_id ) );
 }
+
+/**
+ * Manejar la solicitud AJAX para guardar el lead.
+ */
+function seo_testing_inclup_handle_ajax_save_lead() {
+    // Registrar el inicio de la función
+    error_log("seo_testing_inclup_handle_ajax_save_lead: Iniciando función.");
+
+    if (!isset($_POST['lead'])) {
+        error_log("seo_testing_inclup_handle_ajax_save_lead: 'lead' no está definido en \$_POST.");
+        wp_send_json_error(['message' => 'Datos del lead no proporcionados.']);
+    }
+
+    $lead = json_decode(stripslashes($_POST['lead']), true);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        error_log("seo_testing_inclup_handle_ajax_save_lead: Error al decodificar JSON. Error: " . json_last_error_msg());
+        wp_send_json_error(['message' => 'Datos del lead no válidos.']);
+    }
+
+    // Registrar los datos recibidos
+    error_log("seo_testing_inclup_handle_ajax_save_lead: Datos recibidos - " . print_r($lead, true));
+
+    if (empty($lead['name']) || empty($lead['company']) || empty($lead['phone']) || empty($lead['email']) || empty($lead['domain'])) {
+        error_log("seo_testing_inclup_handle_ajax_save_lead: Faltan campos requeridos.");
+        wp_send_json_error(['message' => 'Todos los campos son obligatorios.']);
+    }
+
+    // Calcular scores
+    $performanceScore = isset($lead['performanceScore']) ? intval($lead['performanceScore']) : 0;
+    $accessibilityScore = isset($lead['accessibilityScore']) ? intval($lead['accessibilityScore']) : 0;
+    $seoScore = isset($lead['seoScore']) ? intval($lead['seoScore']) : 0;
+
+    // Definir umbrales para determinar si es cliente potencial
+    // Por ejemplo, si alguno de los scores es menor a 70
+    if ($performanceScore < 70 || $accessibilityScore < 70 || $seoScore < 70) {
+        $potential_client = 1;
+    } else {
+        $potential_client = 0;
+    }
+
+    $lead_data = [
+        'name' => sanitize_text_field($lead['name']),
+        'company' => sanitize_text_field($lead['company']),
+        'phone' => sanitize_text_field($lead['phone']),
+        'email' => sanitize_email($lead['email']),
+        'domain' => esc_url_raw($lead['domain']),
+        'created_at' => current_time('mysql'),
+        'potential_client' => $potential_client
+    ];
+
+    $save_result = seo_testing_inclup_save_lead( $lead_data );
+
+    if ( !$save_result ) {
+        error_log("seo_testing_inclup_handle_ajax_save_lead: Error al guardar el lead en la base de datos.");
+        wp_send_json_error(['message' => 'Error al guardar el lead en la base de datos.']);
+    }
+
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'seo_testing_inclup_leads';
+    $lead_id = $wpdb->insert_id;
+    error_log("seo_testing_inclup_handle_ajax_save_lead: Lead insertado con ID - " . $lead_id);
+
+    // Obtener la fecha de creación del lead
+    $created_at = $wpdb->get_var($wpdb->prepare("SELECT created_at FROM $table_name WHERE id = %d", $lead_id));
+    error_log("seo_testing_inclup_handle_ajax_save_lead: Fecha de creación - " . $created_at);
+
+    // Actualizar el campo 'created_at' en el lead
+    $wpdb->update(
+        $table_name,
+        [ 'created_at' => $created_at ],
+        [ 'id' => $lead_id ]
+    );
+
+    // Agregar 'created_at' al array $lead
+    $lead_data['created_at'] = $created_at;
+
+    // Enviar correo electrónico
+    seo_testing_inclup_send_lead_email($lead_data);
+
+    wp_send_json_success([
+        'message' => 'Lead guardado y correo enviado.',
+        'potential_client' => $lead_data['potential_client']
+    ]);
+}
+add_action('wp_ajax_seo_testing_inclup_save_lead', 'seo_testing_inclup_handle_ajax_save_lead');
+add_action('wp_ajax_nopriv_seo_testing_inclup_save_lead', 'seo_testing_inclup_handle_ajax_save_lead');
 ?>

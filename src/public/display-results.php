@@ -35,6 +35,11 @@ function seo_testing_inclup_display_results($results) {
     echo '</form>';
     echo '<button id="close-popup" class="button">Cerrar</button>';
     echo '</div>';
+
+    // Añadir el HTML para el loading (debe estar fuera del popup y visible desde el principio)
+    echo '<div id="loading-animation" style="display:none;">
+            <div class="spinner"></div>
+          </div>';
 }
 
 // Enqueue scripts para manejar el popup
