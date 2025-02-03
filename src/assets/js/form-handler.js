@@ -1,10 +1,9 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('seo-testing-form');
     const loadingAnimation = document.getElementById('loading-animation');
     const loadingText = document.getElementById('loading-text');
-    let resultsData = null;
+    const resultsContainer = document.getElementById('results-container');
     let loadingInterval;
-
     const loadingMessages = [
         "Analizando...",
         "Verificando métricas...",
@@ -31,29 +30,34 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Se elimina la función displayResults local ya que se usará la definida en display-results.js
+
     if (form) {
-        form.addEventListener('submit', function(event) {
+        form.addEventListener('submit', function (event) {
             event.preventDefault();
             let domain = document.getElementById('domain-input').value.trim();
             domain = domain.replace(/\/$/, '');
-
             if (!isValidDomain(domain)) {
                 alert('Por favor, ingresa un dominio válido.');
+                console.log("Dominio no válido:", domain);
                 return;
             }
-
             if (!domain.startsWith('http://') && !domain.startsWith('https://')) {
                 domain = 'https://' + domain;
             }
 
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 60000);
+            const timeoutId = setTimeout(() => {
+                console.log("Abortando solicitud por timeout");
+                controller.abort();
+            }, 60000);
 
             if (loadingAnimation) {
                 loadingAnimation.style.display = 'flex';
                 startLoadingAnimation();
             }
 
+            console.log("Enviando solicitud con dominio:", domain);
             fetch(seoTestingInclup.ajaxUrl, {
                 method: 'POST',
                 headers: {
@@ -65,21 +69,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 }),
                 signal: controller.signal
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log("Respuesta de fetch recibida:", response);
+                return response.json();
+            })
             .then(data => {
+                console.log("Datos parseados de JSON:", data);
                 clearTimeout(timeoutId);
-                if (data.success) {
-                    if (data.data && data.data.results) {
-                        resultsData = data.data.results;
-                        displayResults(resultsData);
+                try {
+                    if (data.success) {
+                        if (data.data && data.data.results) {
+                            console.log("Procesando resultados:", data.data.results);
+                            // Se utiliza la función displayResults definida en display-results.js
+                            displayResults(data.data.results);
+                        } else {
+                            console.log("Respuesta exitosa pero sin resultados:", data.data);
+                            alert('Error al procesar los resultados. Inténtalo de nuevo más tarde.');
+                        }
                     } else {
-                        alert('Error al procesar los resultados. Inténtalo de nuevo más tarde.');
+                        console.log("Respuesta no exitosa:", data);
+                        alert('Error al obtener los resultados. Inténtalo de nuevo más tarde.');
                     }
-                } else {
-                    alert('Error al obtener los resultados. Inténtalo de nuevo más tarde.');
+                } catch (e) {
+                    console.error("Error en el procesamiento de datos:", e);
+                    throw e;
                 }
             })
             .catch(error => {
+                console.error("Error en la solicitud fetch:", error);
                 if (error.name === 'AbortError') {
                     alert('La solicitud tardó demasiado tiempo. Por favor, intenta de nuevo.');
                 } else {

@@ -1,116 +1,169 @@
+// Función principal para mostrar los resultados de forma similar a PageSpeed Insights,
+// separando puntuaciones, métricas y oportunidades de optimización.
 function displayResults(results) {
     const resultsContainer = document.getElementById('results-container');
-    if (!results.metrics) {
-        alert('Error al procesar los resultados. Inténtalo de nuevo más tarde.');
-        return;
+
+    // Caso 1: Resultados completos separados para mobile y desktop:
+    if (
+        results &&
+        ('mobile' in results) &&
+        ('desktop' in results) &&
+        results.mobile &&
+        results.desktop
+    ) {
+        resultsContainer.innerHTML = `
+            <div class="ps-results">
+                <header class="ps-header">
+                    <h2>Reporte de PageSpeed Insights</h2>
+                    <p>URL analizada: <strong>${results.mobile.url}</strong></p>
+                </header>
+                <section class="ps-section">
+                    <h3>Puntuaciones Globales</h3>
+                    <div class="ps-scores-container">
+                        <div class="ps-device">
+                            <h4>Móvil</h4>
+                            ${createScoresCard(results.mobile)}
+                        </div>
+                        <div class="ps-device">
+                            <h4>Escritorio</h4>
+                            ${createScoresCard(results.desktop)}
+                        </div>
+                    </div>
+                </section>
+                <section class="ps-section">
+                    <h3>Métricas Clave</h3>
+                    <div class="ps-metrics-container">
+                        <div class="ps-device">
+                            <h4>Móvil</h4>
+                            ${createMetricsCard(results.mobile)}
+                        </div>
+                        <div class="ps-device">
+                            <h4>Escritorio</h4>
+                            ${createMetricsCard(results.desktop)}
+                        </div>
+                    </div>
+                </section>
+                <section class="ps-section">
+                    <h3>Oportunidades de Optimización</h3>
+                    <div class="ps-opportunities">
+                        ${createOpportunitiesList(results.mobile.opportunities)}
+                    </div>
+                </section>
+            </div>
+        `;
     }
-
-    const metrics = results.metrics;
-    resultsContainer.innerHTML = '';
-
-    const title = document.createElement('h3');
-    title.textContent = `Resultados para ${results.url}`;
-    resultsContainer.appendChild(title);
-
-    const scoresContainer = document.createElement('div');
-    scoresContainer.className = 'scores-container';
-
-    const performanceScore = calculatePerformanceScore(metrics);
-    const accessibilityScore = calculateAccessibilityScore(metrics);
-    const seoScore = calculateSeoScore(metrics);
-
-    scoresContainer.innerHTML = `
-        <div class="score-card performance">
-            <h4>Rendimiento</h4>
-            <div class="score-circle tooltip" style="background-color: ${getScoreColor(performanceScore)};" data-tooltip="Medida de la eficiencia de carga de la página.">
-                <span class="score-value">${performanceScore}</span>
+    // Caso 2: Resultado único con puntuación simple (por ejemplo, lo que se ve actualmente en la web)
+    else if (results && 'score' in results) {
+        resultsContainer.innerHTML = `
+            <div class="ps-results">
+                <header class="ps-header">
+                    <h2>Reporte</h2>
+                    <p>URL analizada: <strong>${results.url}</strong></p>
+                </header>
+                <section class="ps-section">
+                    <h3>Puntuación</h3>
+                    <p>${results.score}/100</p>
+                </section>
+                <section class="ps-section">
+                    <h3>Métricas Clave</h3>
+                    <div class="ps-metrics">
+                        <div class="ps-metric">
+                            <label>LCP:</label>
+                            <span>${results.lcp}</span>
+                        </div>
+                        <div class="ps-metric">
+                            <label>FID:</label>
+                            <span>${results.fid}</span>
+                        </div>
+                        <div class="ps-metric">
+                            <label>CLS:</label>
+                            <span>${results.cls}</span>
+                        </div>
+                    </div>
+                </section>
+                <section class="ps-section">
+                    <h3>Oportunidades de Optimización</h3>
+                    <div class="ps-opportunities">
+                        ${createOpportunitiesList(results.opportunities)}
+                    </div>
+                </section>
             </div>
+        `;
+    } else {
+        alert('Error al procesar los resultados. Inténtalo de nuevo más tarde.');
+    }
+}
+
+// Crea una tarjeta de puntuaciones con Performance, Accesibilidad, Best Practices y SEO
+function createScoresCard(data) {
+    return `
+        <div class="ps-scores">
+            ${createScoreItem("Performance", data.scores.performance)}
+            ${createScoreItem("Accesibilidad", data.scores.accessibility)}
+            ${createScoreItem("Best Practices", data.scores.best_practices)}
+            ${createScoreItem("SEO", data.scores.seo)}
         </div>
-        <div class="score-card accessibility">
-            <h4>Accesibilidad</h4>
-            <div class="score-circle tooltip" style="background-color: ${getScoreColor(accessibilityScore)};" data-tooltip="Evaluación de la accesibilidad para todos los usuarios.">
-                <span class="score-value">${accessibilityScore}</span>
-            </div>
-        </div>
-        <div class="score-card seo">
-            <h4>SEO</h4>
-            <div class="score-circle tooltip" style="background-color: ${getScoreColor(seoScore)};" data-tooltip="Optimización para motores de búsqueda.">
-                <span class="score-value">${seoScore}</span>
+    `;
+}
+
+// Crea un ítem individual de puntuación
+function createScoreItem(label, score) {
+    return `
+        <div class="ps-score-item">
+            <span class="ps-label">${label}:</span>
+            <div class="ps-circle" style="background-color: ${getScoreColor(score)}">
+                <span class="ps-value">${score}</span>
             </div>
         </div>
     `;
-
-    resultsContainer.appendChild(scoresContainer);
-
-    const viewMoreButton = document.createElement('button');
-    viewMoreButton.id = 'view-more-button';
-    viewMoreButton.className = 'button';
-    viewMoreButton.textContent = 'Ver toda la info';
-    resultsContainer.appendChild(viewMoreButton);
-
-    viewMoreButton.addEventListener('click', function() {
-        openPopup(resultsContainer, results);
-    });
 }
 
-function displayAdditionalContent(container, results) {
-    const metrics = results.metrics;
+// Crea una tarjeta con las métricas clave
+function createMetricsCard(data) {
+    return `
+        <div class="ps-metrics">
+            <div class="ps-metric">
+                <label>LCP:</label>
+                <span>${data.metrics.lcp}</span>
+            </div>
+            <div class="ps-metric">
+                <label>FID:</label>
+                <span>${data.metrics.fid}</span>
+            </div>
+            <div class="ps-metric">
+                <label>CLS:</label>
+                <span>${data.metrics.cls}</span>
+            </div>
+        </div>
+    `;
+}
 
-    const metricsContainer = document.createElement('div');
-    metricsContainer.className = 'metrics-container';
+// Crea una lista de oportunidades de optimización
+function createOpportunitiesList(opportunities) {
+    const oppArray = Object.values(opportunities || {});
+    if (oppArray.length === 0) {
+        return `<p>No se encontraron oportunidades de optimización.</p>`;
+    }
+    return `
+        <ul class="ps-opportunities-list">
+            ${oppArray.map(opp => `
+                <li class="ps-opportunity">
+                    <strong>${opp.title}</strong>
+                    <p>${opp.description}</p>
+                    <span>Ahorro estimado: ${opp.savings} ms</span>
+                </li>
+            `).join('')}
+        </ul>
+    `;
+}
 
-    const relevantMetrics = [
-        { key: 'first-contentful-paint', title: 'First Contentful Paint (FCP)', tooltip: 'Tiempo que tarda en renderizarse el primer contenido en la pantalla.' },
-        { key: 'largest-contentful-paint', title: 'Largest Contentful Paint (LCP)', tooltip: 'Tiempo que tarda en cargarse el contenido más grande visible en la pantalla.' },
-        { key: 'cumulative-layout-shift', title: 'Cumulative Layout Shift (CLS)', tooltip: 'Medida de la estabilidad visual durante la carga.' },
-        { key: 'interactive', title: 'Time to Interactive (TTI)', tooltip: 'Tiempo que tarda la página en volverse completamente interactiva.' },
-        { key: 'total-blocking-time', title: 'Total Blocking Time (TBT)', tooltip: 'Tiempo total de bloqueo que afecta la interactividad.' },
-    ];
-
-    relevantMetrics.forEach(metric => {
-        const metricData = metrics[metric.key];
-        if (metricData && metricData.displayValue) {
-            const metricElement = document.createElement('div');
-            metricElement.className = 'metric';
-            metricElement.innerHTML = `
-                <h4 class="tooltip" data-tooltip="${metric.tooltip}">${metric.title}</h4>
-                <div class="progress-bar tooltip" data-tooltip="Indicador visual del valor de ${metric.title.toLowerCase()}">
-                    <div class="progress-bar-fill" style="width: ${getMetricProgress(metricData.displayValue)}%;" data-tooltip="Progreso de ${metric.displayValue}"></div>
-                </div>
-                <p class="tooltip" data-tooltip="Valor actual de ${metric.title.toLowerCase()}">${metricData.displayValue}</p>
-            `;
-            metricsContainer.appendChild(metricElement);
-        }
-    });
-
-    container.appendChild(metricsContainer);
-
-    const opportunitiesContainer = document.createElement('div');
-    opportunitiesContainer.className = 'opportunities-container';
-
-    const opportunities = [
-        { key: 'render-blocking-resources', title: 'Eliminar recursos bloqueantes', icon: '🗑️', details: 'Potential savings of 250 ms', tooltip: 'Reducir recursos que bloquean la renderización de la página.' },
-        { key: 'unused-javascript', title: 'Reducir JavaScript no utilizado', icon: '📜', details: 'Potential savings of 150 ms', tooltip: 'Eliminar JavaScript que no se utiliza para optimizar el rendimiento.' },
-        { key: 'unused-css-rules', title: 'Reducir CSS no utilizado', icon: '🎨', details: 'Potential savings of 100 ms', tooltip: 'Eliminar reglas CSS que no se utilizan para mejorar la carga.' },
-        { key: 'modern-image-formats', title: 'Usar formatos de imagen modernos', icon: '🖼️', details: 'Potential savings of 200 ms', tooltip: 'Utilizar formatos de imagen más eficientes como WebP.' },
-    ];
-
-    opportunities.forEach(opportunity => {
-        const opportunityData = metrics[opportunity.key];
-        if (opportunityData && opportunityData.displayValue) {
-            const opportunityElement = document.createElement('div');
-            opportunityElement.className = 'opportunity';
-            opportunityElement.innerHTML = `
-                <div class="opportunity-header tooltip" data-tooltip="${opportunity.tooltip}">
-                    <span class="opportunity-icon tooltip" data-tooltip="${opportunity.tooltip}">${opportunity.icon}</span>
-                    <h4>${opportunity.title}</h4>
-                </div>
-                <p class="opportunity-details tooltip" data-tooltip="Descripción detallada de ${opportunity.title.toLowerCase()}">${opportunity.details}</p>
-                <p class="tooltip" data-tooltip="Descripción: ${opportunityData.displayValue}">${opportunityData.displayValue}</p>
-            `;
-            opportunitiesContainer.appendChild(opportunityElement);
-        }
-    });
-
-    container.appendChild(opportunitiesContainer);
+// Devuelve el color correspondiente según la puntuación
+function getScoreColor(score) {
+    if (score >= 90) {
+        return '#4caf50'; // Verde
+    } else if (score >= 50) {
+        return '#ff9800'; // Naranja
+    } else {
+        return '#f44336'; // Rojo
+    }
 }

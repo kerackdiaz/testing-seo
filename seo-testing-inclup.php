@@ -67,19 +67,16 @@ function seo_testing_inclup_enqueue_scripts() {
     wp_enqueue_script( 'seo-testing-inclup-form-handler', SEO_TESTING_INCLUP_URL . 'src/assets/js/form-handler.js', array('seo-testing-inclup-validation', 'seo-testing-inclup-utils', 'seo-testing-inclup-display-results', 'seo-testing-inclup-popup-handler'), null, true );
 
     wp_localize_script( 'seo-testing-inclup-form-handler', 'seoTestingInclup', array(
-        'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-        'termsUrl' => get_option( 'seo_testing_inclup_terms_url' ),
-        'privacyUrl' => get_option( 'seo_testing_inclup_privacy_url' ),
+        'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
+        'termsUrl'  => get_option( 'seo_testing_inclup_terms_url' ),
+        'privacyUrl'=> get_option( 'seo_testing_inclup_privacy_url' ),
     ));
 }
 add_action( 'wp_enqueue_scripts', 'seo_testing_inclup_enqueue_scripts' );
 
 // Encolar estilos específicos para la página de leads
 function seo_testing_inclup_enqueue_leads_page_styles( $hook ) {
-    // Agregar una línea de depuración para verificar el hook
     error_log("Hook actual en admin_enqueue_scripts: " . $hook);
-
-    // Verificar si el hook corresponde a la página de leads según el log
     if ( $hook !== 'seo-testing_page_seo-testing-inclup-leads' ) { 
         return;
     }
@@ -119,12 +116,14 @@ add_shortcode( 'seo_testing_inclup_form', 'seo_testing_inclup_form_shortcode' );
 function seo_testing_inclup_handle_ajax() {
     if ( ! isset( $_POST['domain'] ) ) {
         wp_send_json_error( array( 'message' => 'Dominio no proporcionado.' ) );
+        wp_die();
     }
 
     $domain = esc_url_raw( $_POST['domain'] );
 
     if ( ! seo_testing_inclup_validate_url( $domain ) ) {
         wp_send_json_error( array( 'message' => 'Dominio no válido.' ) );
+        wp_die();
     }
 
     $api_key = get_option( 'seo_testing_inclup_api_token' );
@@ -132,10 +131,12 @@ function seo_testing_inclup_handle_ajax() {
 
     if ( is_wp_error( $api_response ) ) {
         wp_send_json_error( array( 'message' => $api_response->get_error_message() ) );
+        wp_die();
     }
 
     $processed_data = seo_testing_inclup_process_pagespeed_data( $api_response );
     wp_send_json_success( array( 'results' => $processed_data ) );
+    wp_die();
 }
 add_action( 'wp_ajax_seo_testing_inclup_submit', 'seo_testing_inclup_handle_ajax' );
 add_action( 'wp_ajax_nopriv_seo_testing_inclup_submit', 'seo_testing_inclup_handle_ajax' );
